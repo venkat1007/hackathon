@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tamil Nadu Digital Accessibility Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      height: 50px;
+      background-color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #map {
+      height: calc(100% - 150px);
+    }
+
+    #controls {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-top: 1px solid #ddd;
+    }
+
+    #controls input, #controls textarea, #controls button {
+      margin-bottom: 10px;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+    }
+
+    #searchBar {
+      margin-bottom: 20px;
+    }
+
+    #controls button {
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    #controls button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Tamil Nadu Digital Accessibility Map
+  </header>
+
+  <div id="map"></div>
+
+  <div id="controls">
+    <input type="text" id="searchBar" placeholder="Search for a location...">
+    <button onclick="searchLocations()">Search</button>
+
+    <h3>Add New Accessibility Location</h3>
+    <input type="text" id="locationName" placeholder="Location Name">
+    <input type="text" id="latitude" placeholder="Latitude">
+    <input type="text" id="longitude" placeholder="Longitude">
+    <textarea id="accessibilityFeatures" placeholder="Accessibility Features (comma-separated)"></textarea>
+    <button onclick="addLocation()">Add Location</button>
+  </div>
+
+  <script>
+    const map = L.map('map').setView([11.1271, 78.6569], 7);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; OpenStreetMap contributors',
+    }).addTo(map);
+
+    const locations = [
+      { name: "Public Library", latitude: 11.128, longitude: 78.657, accessibility: ["Wheelchair Ramp", "Elevator"] },
+      { name: "Government Office", latitude: 11.130, longitude: 78.658, accessibility: ["Wheelchair Ramp"] },
+      { name: "Public Library", latitude: 11.128, longitude: 78.657, accessibility: ["Wheelchair Ramp", "Elevator"] },
+      { name: "Government Office", latitude: 11.130, longitude: 78.658, accessibility: ["Wheelchair Ramp"] },
+      { name: "Salem Junction Railway Station", latitude: 11.6694, longitude: 78.1417, accessibility: ["Wheelchair Ramps", "Audio Announcements"] },
+      { name: "Anna Park", latitude: 11.6657, longitude: 78.1473, accessibility: ["Wheelchair Accessible Pathways", "Benches", "Braille Signage"] },
+      { name: "Marina Beach (Accessible Area)", latitude: 13.0418, longitude: 80.2824, accessibility: ["Wheelchair Pathways", "Accessible Washrooms", "Seating Zones"] },
+      { name: "Madurai Meenakshi Amman Temple", latitude: 9.9195, longitude: 78.1193, accessibility: ["Wheelchair Pathways", "Dedicated Entry/Exit for Differently Abled"] },
+      { name: "Coimbatore International Airport", latitude: 11.0290, longitude: 77.0438, accessibility: ["Wheelchair Assistance", "Priority Check-In Counters", "Braille Signage"] },
+      { name: "Kodaikanal Lake", latitude: 10.2381, longitude: 77.4892, accessibility: ["Accessible Boating Dock", "Wheelchair-Friendly Walkways"] },
+      { name: "Chennai Central Railway Station", latitude: 13.0827, longitude: 80.2757, accessibility: ["Tactile Flooring", "Wheelchair Assistance", "Elevators"] },
+      { name: "Kurumbapatti Zoological Park", latitude: 11.6031, longitude: 78.1200, accessibility: ["Accessible Pathways", "Rest Zones", "Tactile Maps"] },
+      { name: "Vellore Fort", latitude: 12.9165, longitude: 79.1325, accessibility: ["Wheelchair Pathways", "Information Boards"] },
+  { name: "MGR Memorial", latitude: 13.0635, longitude: 80.2837, accessibility: ["Wheelchair Accessibility", "Braille Descriptions"] },
+  { name: "Thanjavur Brihadeeswara Temple", latitude: 10.7826, longitude: 79.1316, accessibility: ["Ramps", "Guided Tours"] },
+  { name: "Ooty Botanical Gardens", latitude: 11.4150, longitude: 76.6950, accessibility: ["Accessible Pathways", "Benches"] },
+  { name: "Rameswaram Temple", latitude: 9.2882, longitude: 79.3129, accessibility: ["Wheelchair Pathways", "Dedicated Assistance"] },
+  { name: "Muthupet Lagoon", latitude: 10.3956, longitude: 79.4957, accessibility: ["Boating Dock Accessibility", "Rest Areas"] },
+  { name: "Yercaud Lake", latitude: 11.7790, longitude: 78.2113, accessibility: ["Wheelchair-Friendly Walkways", "Rest Zones"] },
+  { name: "Dhanushkodi Beach", latitude: 9.2310, longitude: 79.4026, accessibility: ["Accessible Viewing Decks", "Wheelchair Pathways"] },
+  { name: "Mahabalipuram Shore Temple", latitude: 12.6113, longitude: 80.1934, accessibility: ["Wheelchair Ramps", "Guided Assistance"] },
+  { name: "Hogenakkal Falls", latitude: 12.1219, longitude: 77.7894, accessibility: ["Accessible Viewpoints", "Safety Railings"] },
+  { name: "Annamalai University", latitude: 11.3920, longitude: 79.7130, accessibility: ["Wheelchair Ramps", "Accessible Washrooms"] },
+  { name: "Guindy National Park", latitude: 13.0067, longitude: 80.2209, accessibility: ["Accessible Trails", "Information Boards"] },
+  { name: "1008 Lingam Temple", latitude: 11.7038, longitude: 78.1219, accessibility: ["Wheelchair Ramps", "Audio Announcements", "Braille Signage"] },
+{ name: "Sugavaneswarar Temple", latitude: 11.6643, longitude: 78.1553, accessibility: ["Wheelchair Pathways", "Guided Assistance", "Dedicated Entry"] },
+{ name: "Yercaud Anna Park", latitude: 11.7786, longitude: 78.2110, accessibility: ["Accessible Walkways", "Benches", "Tactile Maps"] },
+{ name: "Paravasa Ulagam Water Theme Park", latitude: 11.6623, longitude: 78.0911, accessibility: ["Wheelchair-Friendly Zones", "Rest Areas"] },
+{ name: "EllaiPedari Amman Temple", latitude: 11.6721, longitude: 78.1347, accessibility: ["Ramps", "Audio Descriptions"] },
+{ name: "Kailasanathar Temple", latitude: 11.6659, longitude: 78.1326, accessibility: ["Wheelchair Access", "Priority Queues"] },
+{ name: "Mookaneri Lake", latitude: 11.6954, longitude: 78.1572, accessibility: ["Wheelchair-Friendly Paths", "Accessible Boating Dock"] },
+{ name: "Kannankurichi Hill Viewpoint", latitude: 11.6936, longitude: 78.1787, accessibility: ["Accessible Viewpoints", "Rest Areas"] },
+{ name: "Shervarayan Temple, Yercaud", latitude: 11.7841, longitude: 78.2027, accessibility: ["Wheelchair Ramps", "Dedicated Parking"] },
+{ name: "ISKCON Salem", latitude: 11.6821, longitude: 78.1510, accessibility: ["Wheelchair Access", "Audio Announcements", "Accessible Washrooms"] },
+
+    ];
+
+    function addMarkers() {
+      locations.forEach(location => {
+        L.marker([location.latitude, location.longitude]).addTo(map)
+          .bindPopup(`<b>${location.name}</b><br>Accessibility: ${location.accessibility.join(', ')}`);
+      });
+    }
+
+    addMarkers();
+
+    function searchLocations() {
+      const query = document.getElementById("searchBar").value.toLowerCase();
+      const matchedLocation = locations.find(location =>
+        location.name.toLowerCase().includes(query)
+      );
+
+      if (matchedLocation) {
+        map.setView([matchedLocation.latitude, matchedLocation.longitude], 15);
+        L.marker([matchedLocation.latitude, matchedLocation.longitude]).addTo(map)
+          .bindPopup(`<b>${matchedLocation.name}</b><br>Accessibility: ${matchedLocation.accessibility.join(', ')}`)
+          .openPopup();
+      } else {
+        alert("Location not found. Please try a different search term.");
+      }
+    }
+
+    function addLocation() {
+      const name = document.getElementById("locationName").value;
+      const latitude = parseFloat(document.getElementById("latitude").value);
+      const longitude = parseFloat(document.getElementById("longitude").value);
+      const accessibility = document.getElementById("accessibilityFeatures").value.split(",").map(f => f.trim());
+
+      if (name && !isNaN(latitude) && !isNaN(longitude) && accessibility.length > 0) {
+        const newLocation = { name, latitude, longitude, accessibility };
+        locations.push(newLocation);
+
+        L.marker([latitude, longitude]).addTo(map)
+          .bindPopup(`<b>${name}</b><br>Accessibility: ${accessibility.join(', ')}`);
+
+        alert("New location added successfully!");
+
+        document.getElementById("locationName").value = "";
+        document.getElementById("latitude").value = "";
+        document.getElementById("longitude").value = "";
+        document.getElementById("accessibilityFeatures").value = "";
+      } else {
+        alert("Please fill out all fields correctly.");
+      }
+    }
+  </script>
+</body>
+</html>
